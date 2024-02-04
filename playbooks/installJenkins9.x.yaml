@@ -5,66 +5,77 @@
       yum:
         name: java-1.8.0-amazon-corretto-devel
         state: present
-    - name: add tomcatuser
+
+    - name: Add tomcat user
       user:
         name: tomcat
         shell: /sbin/nologin
+
     - name: Tomcat-9 Installation
       get_url:
-        url: https://dlcdn.apache.org/tomcat/tomcat-9/v9.0.82/bin/apache-tomcat-9.0.82.tar.gz
+        url: https://dlcdn.apache.org/tomcat/tomcat-9/v9.0.85/bin/apache-tomcat-9.0.85.tar.gz
         dest: /tmp/
-    - name: copy
+
+    - name: Copy Tomcat archive
       copy:
-        src: /tmp/apache-tomcat-9.0.82.tar.gz
+        src: /tmp/apache-tomcat-9.0.85.tar.gz
         dest: /usr/local/
         remote_src: yes
+
     - name: Unpacking the archive
       unarchive:
-        src: /usr/local/apache-tomcat-9.0.82.tar.gz
+        src: /usr/local/apache-tomcat-9.0.85.tar.gz
         dest: /usr/local
         remote_src: yes
+
     - name: Change file ownership, group and permissions
       file:
-        path: /usr/local/apache-tomcat-9.0.82
+        path: /usr/local/apache-tomcat-9.0.85
         owner: tomcat
         group: tomcat
         recurse: yes
         state: directory
-    - name: make tomcat symbolic link
+
+    - name: Create symbolic link for Tomcat
       file:
-        src: /usr/local/apache-tomcat-9.0.82
+        src: /usr/local/apache-tomcat-9.0.85
         dest: /usr/local/tomcat9
         owner: tomcat
         group: tomcat
         state: link
-    - name: make tomcat.service
+
+    - name: Create tomcat.service file
       file:
         path: /etc/systemd/system/tomcat.service
-        state:  touch
-    - name: edit tomcat.service
+        state: touch
+
+    - name: Edit tomcat.service
       blockinfile:
         dest: /etc/systemd/system/tomcat.service
-        insertafter:
+        insertafter: EOF
         block: |
           [Unit]
-          Description = Apache Tomcat 9
-          After = syslog.target network.target
+          Description=Apache Tomcat 9
+          After=syslog.target network.target
+
           [Service]
-          User = tomcat
-          Group = tomcat
-          Type = oneshot
-          PIDFile =/usr/local/apache-tomcat-9.0.82/tomcat.pid
-          RemainAfterExit = yes
-          ExecStart =/usr/local/apache-tomcat-9.0.82/bin/startup.sh
-          ExecStop =/usr/local/apache-tomcat-9.0.82/bin/shutdown.sh
-          ExecReStart =/usr/local/apache-tomcat-9.0.82/bin/shutdown.sh;/usr/local/apache-tomcat-9.0.80/bin/startup.sh
+          User=tomcat
+          Group=tomcat
+          Type=oneshot
+          PIDFile=/usr/local/apache-tomcat-9.0.85/temp/tomcat.pid
+          RemainAfterExit=yes
+          ExecStart=/usr/local/apache-tomcat-9.0.85/bin/startup.sh
+          ExecStop=/usr/local/apache-tomcat-9.0.85/bin/shutdown.sh
+
           [Install]
-          WantedBy = multi-user.target
-    - name: chmod 755 tomcat.service
+          WantedBy=multi-user.target
+
+    - name: Change permissions for tomcat.service
       file:
         path: /etc/systemd/system/tomcat.service
-        mode:  0755
-    - name: start tomcat
+        mode: 0644
+
+    - name: Start tomcat service
       systemd:
         name: tomcat.service
         state: started
